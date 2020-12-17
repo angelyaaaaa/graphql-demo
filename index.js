@@ -4,21 +4,9 @@ const { ApolloServer, gql } = require('apollo-server');
 
 // NOTE: fake data
 const users = [
-    {
-        id: 1,
-        name: 'Fong',
-        age: 23
-    },
-    {
-        id: 2,
-        name: 'Kevin',
-        age: 40
-    },
-    {
-        id: 3,
-        name: 'Mary',
-        age: 18
-    }
+    { id: 1, name: 'Fong', age: 23, friendIds: [2, 3] },
+    { id: 2, name: 'Kevin', age: 40, friendIds: [1] },
+    { id: 3, name: 'Mary', age: 18, friendIds: [1] }
 ];
 
 
@@ -29,11 +17,12 @@ const typeDefs = gql`
     """
     type User {
         "ID"
-        id: ID
+        id: ID!
         "Name"
         name: String
         "Age"
         age: Int
+        friends: [User]
     }
 
     type Query {
@@ -41,6 +30,7 @@ const typeDefs = gql`
         hello: String
         "Get current user"
         me: User
+        users: [User]
     }
 `;
 
@@ -50,6 +40,13 @@ const resolvers = {
         // NOTE: absolutely map to field name in schema
         hello: () => 'world',
         me: () => users[0],
+        users: () => users
+    },
+    User: {
+        friends: (parent, args, context) => {
+            const { friendIds } = parent;
+            return users.filter((user) => friendIds.includes(user.id) )
+        }
     }
 };
 
