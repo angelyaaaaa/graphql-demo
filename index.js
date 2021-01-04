@@ -4,14 +4,34 @@ const { ApolloServer, gql } = require('apollo-server');
 
 // NOTE: fake data
 const users = [
-    { id: 1, name: 'Fong', age: 23, friendIds: [2, 3] },
-    { id: 2, name: 'Kevin', age: 40, friendIds: [1] },
-    { id: 3, name: 'Mary', age: 18, friendIds: [1] }
+    { id: 1, name: 'Fong', age: 23, hight: 172.4, weight: 63.2, friendIds: [2, 3] },
+    { id: 2, name: 'Kevin', age: 40, hight: 192.2, weight: 90.5, friendIds: [1] },
+    { id: 3, name: 'Mary', age: 18, hight: 166.6, weight: 53.8, friendIds: [1] }
 ];
 
 
 // 1. GraphQL Schema
 const typeDefs = gql`
+    """
+    height unit
+    """
+    enum HightUnit {
+        METER
+        CENTIMETER
+        "1 foot = 30.48 cm"
+        FOOT
+    }
+
+    """
+    weight unit, this is a scalar type, so we declare it as all capital
+    """
+    enum WeightUnit {
+        KILOGRAM
+        GRAM
+        "1 pound = 0.4535927 kilogram"
+        POUND
+    }
+
     """
     user info
     """
@@ -22,6 +42,10 @@ const typeDefs = gql`
         name: String
         "Age"
         age: Int
+        "Height"
+        hight(unit: HightUnit = CENTIMETER): Float
+        "Wdight"
+        weight(unit: WeightUnit = KILOGRAM): Float
         friends: [User]
     }
 
@@ -31,6 +55,7 @@ const typeDefs = gql`
         "Get current user"
         me: User
         users: [User]
+        user(name: String!, id: ID): User
     }
 `;
 
@@ -40,10 +65,36 @@ const resolvers = {
         // NOTE: absolutely map to field name in schema
         hello: () => 'world',
         me: () => users[0],
-        users: () => users
+        users: () => users,
+        user: (root, args) => {
+            const { name } = args;
+            return users.find(user => user.name === name);
+        }
     },
     User: {
-        friends: (parent, args, context) => {
+        hight: (parent, args) => {
+            const { unit } = args;
+            if (!unit || unit === 'CENTIMETER') {
+                return parent.hight;
+            } else if (unit === 'METER') {
+                return parent.hight / 100;
+            } else if (unit === 'FOOT') {
+                return parent.hight / 30.48;
+            }
+            throw new Error(`Hight Unit ${unit} not support`);
+        },
+        weight: (parent, args) => {
+            const { unit } = args;
+            if (!unit || unit === 'KILOGRAM') {
+                return parent.weight;
+            } else if (unit === 'GRAM') {
+                return parent.weight * 100;
+            } else if (unit === 'POUND') {
+                return parent.weight / 0.4535927;
+            }
+            throw new Error(`Weight Unit ${unit} not support`);
+        },
+        friends: (parent, args) => {
             const { friendIds } = parent;
             return users.filter((user) => friendIds.includes(user.id) )
         }
