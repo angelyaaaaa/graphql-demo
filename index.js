@@ -76,9 +76,14 @@ const typeDefs = gql`
         post(id: ID!): Post
     }
 
+    
+    input AddPostInput {
+        title: String!
+        content: String
+    }
     type Mutation {
         # Assume poster is the one who post
-        addPost(title: String!, content: String): Post
+        addPost(input: AddPostInput!): Post
         likePost(postId: ID!): Post
     }
 `;
@@ -103,7 +108,8 @@ const resolvers = {
     },
     Mutation: {
         addPost: (root, args) => {
-            const { title, content } = args;
+            // const { title, content } = args;
+            const { input: { title, content } = {} } = args;
             const newPost = {
                 id: posts.length + 1,
                 authorId: meId,
