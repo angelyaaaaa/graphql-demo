@@ -77,12 +77,14 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        addPost(id: ID!, authorId: ID!, title: String!, content: String): Post
-        likePost(postId: ID!, likeGiverId: ID!): Post
+        # Assume poster is the one who post
+        addPost(title: String!, content: String): Post
+        likePost(postId: ID!): Post
     }
 `;
 
 // 2. Resolvers is a function mapping field in schema, abling to processing data first then return back to gql server
+const meId = 1; // shoud get from interior system
 const resolvers = {
     Query: {
         // NOTE: absolutely map to field name in schema
@@ -98,6 +100,33 @@ const resolvers = {
             const { id } = args;
             return posts.find(post => post.id === id);
         }
+    },
+    Mutation: {
+        addPost: (root, args) => {
+            const { title, content } = args;
+            const newPost = {
+                id: posts.length + 1,
+                authorId: meId,
+                title,
+                content,
+                likeGiverIds: []
+            }
+            posts.push(newPost);
+            return posts[posts.length - 1];
+        },
+        likePost: (root, args) => {
+            // with toggle like function
+            const { postId } = args;
+            const targetPost = posts[postId - 1];
+            const { likeGiverIds } = targetPost;
+
+            if (likeGiverIds.includes(meId)) {
+                likeGiverIds.splice(c.index(meId), 1);
+            } else {
+                likeGiverIds.push(meId);
+            }
+            return targetPost;
+        },
     },
     User: {
         hight: (parent, args) => {
@@ -129,14 +158,14 @@ const resolvers = {
     },
     Post: {
         author: (parent, args) => {
-            const { id } = parent;
-            return users.find(user => user.id === id) 
+            const { authorId } = parent;
+            return users.find(user => user.id === authorId);
         },
         likeGiverIds: (parent, args) => {
             const { likeGiverIds } = parent;
             return users.filter(user => likeGiverIds.includes(user.id));
         },
-    }
+    },
 };
 
 const server = new ApolloServer({
