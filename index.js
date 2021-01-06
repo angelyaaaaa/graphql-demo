@@ -75,6 +75,11 @@ const typeDefs = gql`
         posts: [Post]
         post(id: ID!): Post
     }
+
+    type Mutation {
+        addPost(id: ID!, authorId: ID!, title: String!, content: String): Post
+        likePost(postId: ID!, likeGiverId: ID!): Post
+    }
 `;
 
 // 2. Resolvers is a function mapping field in schema, abling to processing data first then return back to gql server
