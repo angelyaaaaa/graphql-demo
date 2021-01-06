@@ -8,6 +8,11 @@ const users = [
     { id: 2, name: 'Kevin', age: 40, hight: 192.2, weight: 90.5, friendIds: [1] },
     { id: 3, name: 'Mary', age: 18, hight: 166.6, weight: 53.8, friendIds: [1] }
 ];
+const posts = [
+    { id: 1, authorId: 1, title: "Hello World!", content: "This is my first post.", likeGiverIds: [2] },
+    { id: 2, authorId: 2, title: "Good Night", content: "Have a Nice Dream =)", likeGiverIds: [2, 3] },
+    { id: 3, authorId: 1, title: "I Love U", content: "Here's my second post!", likeGiverIds: [] },
+];
 
 
 // 1. GraphQL Schema
@@ -49,6 +54,17 @@ const typeDefs = gql`
         friends: [User]
     }
 
+    """
+    post info
+    """
+    type Post {
+        id: ID!
+        author: User
+        title: String
+        content: String
+        likeGiverIds: [User]
+    }
+
     type Query {
         "A simple type for getting started!"
         hello: String
@@ -56,6 +72,8 @@ const typeDefs = gql`
         me: User
         users: [User]
         user(name: String!, id: ID): User
+        posts: [Post]
+        post(id: ID!): Post
     }
 `;
 
@@ -69,6 +87,11 @@ const resolvers = {
         user: (root, args) => {
             const { name } = args;
             return users.find(user => user.name === name);
+        },
+        posts: () => posts,
+        post: (root, args) => {
+            const { id } = args;
+            return posts.find(post => post.id === id);
         }
     },
     User: {
@@ -98,6 +121,16 @@ const resolvers = {
             const { friendIds } = parent;
             return users.filter((user) => friendIds.includes(user.id) )
         }
+    },
+    Post: {
+        author: (parent, args) => {
+            const { id } = parent;
+            return users.find(user => user.id === id) 
+        },
+        likeGiverIds: (parent, args) => {
+            const { likeGiverIds } = parent;
+            return users.filter(user => likeGiverIds.includes(user.id));
+        },
     }
 };
 
